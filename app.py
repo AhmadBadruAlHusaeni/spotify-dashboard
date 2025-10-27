@@ -37,6 +37,8 @@ def load_model(path="src/models/popularity_model.pkl"):
 # Load resources
 # ---------------------------
 df = load_data()
+# Load original dataset (untuk nama lagu & artis)
+df_original = pd.read_csv("data/spotify_songs.csv")
 model = load_model()
 
 # recompute top features (consistent with model training)
@@ -76,27 +78,62 @@ tabs = st.tabs([
 ])
 
 # ---------------------------
-# Tab: Overview
+# Tab: Overview (UPDATED)
 # ---------------------------
 with tabs[0]:
     st.header("🏠 Overview Project")
+
     col1, col2, col3 = st.columns([1.5, 1, 1])
+    
+    # Dataset Snapshot
     with col1:
         st.subheader("Dataset Snapshot")
         st.write(f"Jumlah baris: **{df.shape[0]:,}**")
         st.write(f"Jumlah kolom: **{df.shape[1]}**")
         st.write("Contoh beberapa kolom penting:")
         st.dataframe(df[top_features + ['track_popularity']].head(6), use_container_width=True)
+
+    # Target Summary
     with col2:
         st.subheader("Target Summary")
-        st.metric("Mean Popularity", f"{df['track_popularity'].mean():.2f}")
-        st.metric("Median Popularity", f"{df['track_popularity'].median():.2f}")
-        st.metric("Max Popularity", f"{df['track_popularity'].max():.0f}")
+        mean_pop = df['track_popularity'].mean()
+        median_pop = df['track_popularity'].median()
+        max_pop = df['track_popularity'].max()
+        st.metric("Mean Popularity", f"{mean_pop:.2f}")
+        st.metric("Median Popularity", f"{median_pop:.2f}")
+        st.metric("Max Popularity", f"{max_pop:.0f}")
+
+    # Top Features
     with col3:
         st.subheader("Top Features (by abs correlation)")
         for i, f in enumerate(top_features, 1):
             val = corr_matrix['track_popularity'][f]
             st.write(f"{i}. **{f}** — korelasi: {val:.3f}")
+
+    # ===========================
+    # Tambahan Baru: Top 5 & Bottom 5 Lagu
+    # ===========================
+    st.subheader("🔥 Top 5 Lagu Paling Populer")
+    df_top5 = df_original.nlargest(5, "track_popularity")[["track_name", "track_artist", "track_popularity"]].reset_index(drop=True)
+    df_top5.index += 1
+    st.dataframe(df_top5, use_container_width=True)
+
+    st.subheader("❄ Bottom 5 Lagu Kurang Populer")
+    df_bottom5 = df_original.nsmallest(5, "track_popularity")[["track_name", "track_artist", "track_popularity"]].reset_index(drop=True)
+    df_bottom5.index += 1
+    st.dataframe(df_bottom5, use_container_width=True)
+
+    # Insight otomatis
+    top_song = df_top5.iloc[0]["track_name"]
+    top_artist = df_top5.iloc[0]["track_artist"]
+    bottom_song = df_bottom5.iloc[0]["track_name"]
+    bottom_artist = df_bottom5.iloc[0]["track_artist"]
+
+    st.info(
+        f"🎯 Lagu dengan popularitas tertinggi adalah **'{top_song}'** oleh **{top_artist}**, "
+        f"sedangkan lagu dengan popularitas terendah adalah **'{bottom_song}'** oleh **{bottom_artist}**."
+    )
+
 
 # ---------------------------
 # Tab: Popularitas
