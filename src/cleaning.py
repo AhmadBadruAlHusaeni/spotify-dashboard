@@ -68,6 +68,12 @@ scaler = MinMaxScaler()
 df[num_cols] = scaler.fit_transform(df[num_cols])
 
 # ============================================
+# 7A. Simpan dataset versi sebelum encoding (untuk tampilan dashboard)
+# ============================================
+original_df = df.copy()
+original_df.to_csv("data/spotify_cleaned_original.csv", index=False)
+
+# ============================================
 # 8. Encoding Kolom Kategorikal
 # ============================================
 le = LabelEncoder()
