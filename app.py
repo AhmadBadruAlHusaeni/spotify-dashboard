@@ -16,8 +16,69 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for Semi-dark Spotify theme
+st.markdown("""
+<style>
+    /* Main background and text colors */
+    .stApp {
+        background-color: #121212;
+        color: #ffffff;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #000000;
+    }
+    
+    /* Cards and containers */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #282828;
+        border-radius: 8px;
+        padding: 0.5rem 0.5rem 0;
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #ffffff;
+        border-radius: 4px 4px 0 0;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        background-color: #1e1e1e;
+        transition: all 0.3s ease;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #333333;
+        color: #1DB954;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #1DB954;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background-color: #1DB954;
+        font-weight: 600;
+    }
+    
+    /* Metrics and KPIs */
+    .css-1xarl3l {
+        background-color: #282828;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    /* Charts and plots background */
+    .element-container iframe {
+        background-color: #1e1e1e;
+    }
+    
+    /* Text colors and links */
+    a {color: #1DB954;}
+    .css-10trblm {color: #ffffff;}
+</style>
+""", unsafe_allow_html=True)
+
 # seaborn theme & palettes
-sns.set_style("whitegrid")
+plt.style.use("dark_background")
+sns.set_style("darkgrid")
+sns.set_palette(["#1DB954", "#4b5563", "#282828"])
 PALETTE_1 = "magma"
 PALETTE_2 = "coolwarm"
 PALETTE_3 = "viridis"
@@ -54,40 +115,81 @@ top_features = corr_matrix['track_popularity'].abs().sort_values(ascending=False
 # ---------------------------
 # Sidebar
 # ---------------------------
-st.sidebar.title("🎵 Spotify Popularity Dashboard")
 st.sidebar.markdown("""
-**Project**: Prediksi & Analisis Faktor Popularitas Lagu di Spotify  
-**Model**: Linear Regression (baseline)  
-**Dataset**: 30k Spotify songs (preprocessed)  
+<div style='text-align: center; margin-bottom: 20px'>
+    <img src='https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png' width="200"/>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.title("Dashboard Info")
+
+# Informasi Project
+st.sidebar.markdown("### Project Overview")
+st.sidebar.markdown("""
+- **Nama**: Prediksi Popularitas Lagu Spotify
+- **Tujuan**: Menganalisis dan memprediksi tingkat popularitas lagu
+- **Model**: Linear Regression
+- **Akurasi**: Baseline model untuk analisis awal
 """)
+
+# Dataset Info dengan metrik
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    st.metric("Total Lagu", f"{len(df):,}")
+with col2:
+    st.metric("Fitur", f"{len(df.columns)}")
+
+# Fitur Dashboard
+st.sidebar.markdown("### Fitur Dashboard")
+st.sidebar.markdown("""
+✦ Analisis Distribusi Popularitas  
+✦ Insight Genre & Subgenre  
+✦ Analisis Korelasi Fitur  
+✦ Prediksi Popularitas Lagu  
+""")
+
+# Quick Stats
+st.sidebar.markdown("### Quick Stats")
+st.sidebar.markdown(f"""
+- **Genre Terpopuler**: {df_original['playlist_genre'].value_counts().index[0]}
+- **Rata-rata Popularitas**: {df['track_popularity'].mean():.2f}
+- **Total Genre**: {df_original['playlist_genre'].nunique()}
+""")
+
+# Footer
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Tips:** Gunakan tab di atas untuk berpindah antara view. Untuk interaksi lebih lanjut (prediksi manual), minta upgrade V3.")
+st.sidebar.markdown("""
+<div style='text-align: center; color: #666; font-size: 14px'>
+    Dashboard v2.0 | Music Analytics<br>
+    Developed by Ahmad Badru Al Husaeni
+</div>
+""", unsafe_allow_html=True)
 
 # ---------------------------
 # Header
 # ---------------------------
-st.title("🎧 Prediksi & Analisis Faktor Popularitas Lagu di Spotify")
+st.title("Prediksi & Analisis Faktor Popularitas Lagu di Spotify")
 st.markdown(
     "Dashboard ini menampilkan distribusi popularitas, insight genre, korelasi fitur, "
-    "dan contoh prediksi menggunakan model Linear Regression. Warna dan layout telah diperbarui untuk presentasi."
+    "dan contoh prediksi menggunakan model Linear Regression"
 )
 
 # ---------------------------
 # Tabs
 # ---------------------------
 tabs = st.tabs([
-    "🏠 Overview",
-    "📈 Popularitas",
-    "🎼 Genre Insight",
-    "🔗 Korelasi",
-    "🔍 Cari & Prediksi Lagu"
+    "Overview",
+    "Popularitas",
+    "Genre Insight",
+    "Korelasi",
+    "Cari & Prediksi Lagu"
 ])
 
 # ---------------------------
 # Tab: Overview (UPDATED)
 # ---------------------------
 with tabs[0]:
-    st.header("🏠 Overview Project")
+    st.header("Overview Project")
 
     col1, col2, col3 = st.columns([1.5, 1, 1])
     
@@ -119,13 +221,28 @@ with tabs[0]:
     # ===========================
     # Tambahan Baru: Top 5 & Bottom 5 Lagu
     # ===========================
-    st.subheader("🔥 Top 5 Lagu Paling Populer")
-    df_top5 = df_original.nlargest(5, "track_popularity")[["track_name", "track_artist", "track_popularity"]].reset_index(drop=True)
+    
+    # Load data dari dataset original (spotify_songs.csv) untuk popularitas yang akurat
+    df_songs = pd.read_csv('data/spotify_songs.csv')
+    
+    # Menghilangkan duplikat dan data tidak valid
+    df_songs = df_songs.drop_duplicates(subset=['track_name', 'track_artist'])
+    df_valid = df_songs[
+        (df_songs['track_name'].str.len() > 0) &
+        (df_songs['track_artist'].str.len() > 0)
+    ]
+    
+    st.subheader("Top 5 Lagu Paling Populer")
+    # Ambil lagu dengan popularitas > 0 untuk menghindari data yang belum di-rate
+    df_top5 = df_valid[df_valid['track_popularity'] > 0].nlargest(5, "track_popularity")[["track_name", "track_artist", "track_popularity"]]
+    df_top5 = df_top5.reset_index(drop=True)
     df_top5.index += 1
     st.dataframe(df_top5, use_container_width=True)
 
-    st.subheader("❄ Bottom 5 Lagu Kurang Populer")
-    df_bottom5 = df_original.nsmallest(5, "track_popularity")[["track_name", "track_artist", "track_popularity"]].reset_index(drop=True)
+    st.subheader("Bottom 5 Lagu Kurang Populer")
+    # Filter lagu dengan popularitas minimum 10 untuk menghindari lagu yang belum banyak di-rate
+    df_bottom5 = df_valid[df_valid['track_popularity'] >= 10].nsmallest(5, "track_popularity")[["track_name", "track_artist", "track_popularity"]]
+    df_bottom5 = df_bottom5.reset_index(drop=True)
     df_bottom5.index += 1
     st.dataframe(df_bottom5, use_container_width=True)
 
@@ -136,7 +253,7 @@ with tabs[0]:
     bottom_artist = df_bottom5.iloc[0]["track_artist"]
 
     st.info(
-        f"🎯 Lagu dengan popularitas tertinggi adalah **'{top_song}'** oleh **{top_artist}**, "
+        f"Lagu dengan popularitas tertinggi adalah **'{top_song}'** oleh **{top_artist}**, "
         f"sedangkan lagu dengan popularitas terendah adalah **'{bottom_song}'** oleh **{bottom_artist}**."
     )
 
@@ -145,7 +262,7 @@ with tabs[0]:
 # Tab: Popularitas (UPDATED)
 # ---------------------------
 with tabs[1]:
-    st.header("📈 Distribusi Popularitas Lagu")
+    st.header("Distribusi Popularitas Lagu")
     st.markdown("Tab ini menunjukkan bagaimana popularitas lagu tersebar dalam dataset, lengkap dengan garis rata-rata (mean) dan median untuk membantu interpretasi.")
 
     mean_pop = df['track_popularity'].mean()
@@ -163,13 +280,13 @@ with tabs[1]:
     st.pyplot(fig, use_container_width=True)
 
     # Boxplot (tetap digunakan untuk deteksi outlier)
-    st.markdown("### 📦 Boxplot Popularitas (untuk melihat outlier)")
+    st.markdown("### Boxplot Popularitas (untuk melihat outlier)")
     fig2, ax2 = plt.subplots(figsize=(10, 2))
     sns.boxplot(x=df['track_popularity'], ax=ax2, palette=[sns.color_palette("plasma", 1)[0]])
     st.pyplot(fig2, use_container_width=True)
 
     # Insight otomatis
-    st.markdown("### 🧠 Insight:")
+    st.markdown("### Insight:")
     if mean_pop > median_pop:
         skew_desc = "Distribusi sedikit condong ke kanan (right-skewed), artinya ada lagu-lagu dengan popularitas tinggi yang menarik rata-rata ke atas."
     elif mean_pop < median_pop:
@@ -178,9 +295,9 @@ with tabs[1]:
         skew_desc = "Distribusi cukup simetris antara mean dan median."
 
     st.info(
-        f"✅ Rata-rata popularitas: **{mean_pop:.2f}**, median: **{median_pop:.2f}**.\n"
-        f"📌 {skew_desc}\n"
-        f"📊 Mayoritas lagu berada pada rentang popularitas sekitar "
+        f"Rata-rata popularitas: **{mean_pop:.2f}**, median: **{median_pop:.2f}**.\n"
+        f"{skew_desc}\n"
+        f"Mayoritas lagu berada pada rentang popularitas sekitar "
         f"**{df['track_popularity'].quantile(0.25):.0f} hingga {df['track_popularity'].quantile(0.75):.0f}**."
     )
 
@@ -189,7 +306,7 @@ with tabs[1]:
 # Tab: Genre Insight (UPDATED)
 # ---------------------------
 with tabs[2]:
-    st.header("🎼 Genre & Popularitas Insight")
+    st.header("Genre & Popularitas Insight")
     st.markdown("""
     Tab ini menunjukkan distribusi jumlah lagu berdasarkan genre dan subgenre, 
     serta analisis genre mana yang cenderung lebih populer berdasarkan rata-rata popularitas.
@@ -201,7 +318,7 @@ with tabs[2]:
     # Top 10 Genre (Jumlah Lagu)
     # ============================
     with colg1:
-        st.subheader("📊 Top 10 Genre (Jumlah Lagu)")
+        st.subheader("Top 10 Genre (Jumlah Lagu)")
         top_genres = df_original['playlist_genre'].value_counts().head(10)
         top_genres_labeled = top_genres.index + " (" + top_genres.values.astype(str) + " lagu)"
         figg1, axg1 = plt.subplots(figsize=(8, 4))
@@ -215,7 +332,7 @@ with tabs[2]:
     # Top 10 Subgenre (Jumlah Lagu)
     # ============================
     with colg2:
-        st.subheader("🎧 Top 10 Subgenre (Jumlah Lagu)")
+        st.subheader("Top 10 Subgenre (Jumlah Lagu)")
         top_subgenres = df_original['playlist_subgenre'].value_counts().head(10)
         top_subgenres_labeled = top_subgenres.index + " (" + top_subgenres.values.astype(str) + " lagu)"
         figg2, axg2 = plt.subplots(figsize=(8, 4))
@@ -228,7 +345,7 @@ with tabs[2]:
     # ============================
     # Rata-rata Popularitas per Genre
     # ============================
-    st.subheader("🌟 Genre dengan Rata-rata Popularitas Tertinggi")
+    st.subheader("Genre dengan Rata-rata Popularitas Tertinggi")
     genre_popularity = df_original.groupby("playlist_genre")["track_popularity"].mean().sort_values(ascending=False).head(7)
     figg3, axg3 = plt.subplots(figsize=(8, 4))
     sns.barplot(x=genre_popularity.values, y=genre_popularity.index, palette="plasma", ax=axg3)
@@ -242,7 +359,7 @@ with tabs[2]:
     top_pop_score = genre_popularity.values[0]
 
     st.info(
-        f"🎯 Genre dengan rata-rata popularitas tertinggi adalah **'{top_genre}'** "
+        f"Genre dengan rata-rata popularitas tertinggi adalah **'{top_genre}'** "
         f"dengan rata-rata skor sekitar **{top_pop_score:.2f}**. "
         "Hal ini menunjukkan bahwa lagu dalam genre tersebut cenderung lebih disukai pendengar Spotify."
     )
@@ -252,7 +369,7 @@ with tabs[2]:
 # Tab: Korelasi (UPDATED)
 # ---------------------------
 with tabs[3]:
-    st.header("🔗 Korelasi Fitur dengan Popularitas")
+    st.header("Korelasi Fitur dengan Popularitas")
     st.markdown("""
     Korelasi membantu kita memahami seberapa kuat hubungan antara fitur audio dengan popularitas lagu.
     Nilai korelasi berada pada rentang -1 hingga 1:
@@ -273,16 +390,16 @@ with tabs[3]:
     top2_corr = corr_pop.sort_values(ascending=False).head(2)
     lowest_corr = corr_pop.sort_values(ascending=True).head(1)
     
-    st.subheader("📌 Insight Korelasi Utama")
+    st.subheader("Insight Korelasi Utama")
     st.info(
-        f"✅ Fitur dengan korelasi paling tinggi terhadap popularitas: **{top2_corr.index[0]} ({top2_corr.values[0]:.3f})** dan "
+        f"Fitur dengan korelasi paling tinggi terhadap popularitas: **{top2_corr.index[0]} ({top2_corr.values[0]:.3f})** dan "
         f"**{top2_corr.index[1]} ({top2_corr.values[1]:.3f})**.\n"
-        f"⚠ Fitur dengan korelasi paling rendah: **{lowest_corr.index[0]} ({lowest_corr.values[0]:.3f})**, "
+        f"Fitur dengan korelasi paling rendah: **{lowest_corr.index[0]} ({lowest_corr.values[0]:.3f})**, "
         f"menunjukkan hampir tidak ada pengaruh langsung terhadap popularitas."
     )
 
     # Scatter plots with interpretation
-    st.subheader("📍 Scatterplot: Hubungan Fitur vs Popularitas")
+    st.subheader("Scatterplot: Hubungan Fitur vs Popularitas")
     st.markdown("Setiap grafik berikut menunjukkan hubungan antara fitur dan popularitas dengan garis regresi untuk melihat kecenderungan hubungan.")
 
     for f in top_features:
@@ -301,12 +418,12 @@ with tabs[3]:
             trend_desc = "hubungan negatif (semakin tinggi fitur, popularitas sedikit menurun)"
         else:
             trend_desc = "hubungan sangat lemah atau hampir tidak ada"
-        st.caption(f"📍 Interpretasi: Korelasi {corr_val:.3f} menunjukkan {trend_desc}.")
+        st.caption(f"Interpretasi: Korelasi {corr_val:.3f} menunjukkan {trend_desc}.")
 
     # Kesimpulan akhir
     st.markdown("---")
     st.success(
-        "💡 Kesimpulan: Korelasi antar fitur dengan popularitas cenderung lemah, "
+        "Kesimpulan: Korelasi antar fitur dengan popularitas cenderung lemah, "
         "yang menjelaskan mengapa model linier menghasilkan skor R² yang rendah. "
         "Popularitas lagu kemungkinan juga dipengaruhi faktor eksternal seperti viralitas, artis terkenal, dan tren sosial."
     )
@@ -316,7 +433,7 @@ with tabs[3]:
 # Tab: 🔍 Cari & Prediksi Lagu (gabungan random + manual)
 # ---------------------------
 with tabs[4]:
-    st.header("🔍 Cari & Prediksi Lagu")
+    st.header("Cari & Prediksi Lagu")
     st.markdown("""
     Tab ini memungkinkan kamu untuk **memilih lagu tertentu berdasarkan judul atau artis**, 
     atau menampilkan **prediksi acak** dari model Linear Regression.
@@ -325,7 +442,7 @@ with tabs[4]:
     # Pilihan mode
     mode = st.radio(
         "Pilih mode prediksi:",
-        ["🎲 Prediksi Random", "📝 Cari Lagu Manual"],
+        ["Prediksi Random", "Cari Lagu Manual"],
         index=0,
         horizontal=True
     )
@@ -335,9 +452,9 @@ with tabs[4]:
     # ---------------------------
     # MODE 1: Prediksi Random
     # ---------------------------
-    if mode == "🎲 Prediksi Random":
-        st.subheader("🎲 Prediksi Lagu Acak")
-        if st.button("🔄 Ambil Lagu Acak Baru"):
+    if mode == "Prediksi Random":
+        st.subheader("Prediksi Lagu Acak")
+        if st.button("Ambil Lagu Acak Baru"):
             st.session_state['sample_idx_v3'] = random.randint(0, len(df) - 1)
 
         if 'sample_idx_v3' not in st.session_state:
@@ -348,30 +465,33 @@ with tabs[4]:
         sample_orig = df_original.iloc[idx]
 
         st.markdown(f"""
-        **🎵 Judul:** {sample_orig['track_name']}  
-        **🎤 Artis:** {sample_orig['track_artist']}  
-        **🎧 Genre:** {sample_orig['playlist_genre']} | **Subgenre:** {sample_orig['playlist_subgenre']}  
-        **📅 Tanggal Rilis:** {sample_orig['track_album_release_date']}  
-        **⏱️ Durasi:** {round(sample_orig['duration_ms']/60000, 2)} menit  
+        **Judul:** {sample_orig['track_name']}  
+        **Artis:** {sample_orig['track_artist']}  
+        **Genre:** {sample_orig['playlist_genre']} | **Subgenre:** {sample_orig['playlist_subgenre']}  
+        **Tanggal Rilis:** {sample_orig['track_album_release_date']}  
+        **Durasi:** {round(sample_orig['duration_ms']/60000, 2)} menit  
         """)
 
-        st.markdown("#### 📊 Nilai Fitur (Top 5)")
+        st.markdown("#### Nilai Fitur (Top 5)")
         st.table(pd.DataFrame([sample[top_features].round(4)], index=["value"]).T)
 
         X = sample[top_features].values.reshape(1, -1)
         y_pred = model.predict(X)[0]
+        
+        # Konversi prediksi ke skala 0-100 untuk konsistensi dengan data asli
+        y_pred_scaled = y_pred * 100
         y_true = sample['track_popularity']
-        diff = abs(y_pred - y_true)
+        diff = abs(y_pred_scaled - y_true)
 
-        st.markdown("#### 📈 Hasil Prediksi")
-        st.metric("Predicted Popularity", f"{y_pred:.4f}")
-        st.metric("Actual Popularity", f"{y_true:.4f}")
-        st.metric("Selisih", f"{diff:.4f}")
+        st.markdown("#### Hasil Prediksi")
+        st.metric("Predicted Popularity", f"{y_pred_scaled:.2f}/100")
+        st.metric("Actual Popularity", f"{y_true:.2f}/100")
+        st.metric("Selisih", f"{diff:.2f}")
 
-        # Interpretasi popularitas
-        pop_threshold = 0.46
-        status = "🟢 Populer" if y_pred >= pop_threshold else "🔵 Kurang Populer"
-        st.markdown(f"### 🎯 Interpretasi")
+        # Interpretasi popularitas (menggunakan threshold yang sesuai dengan skala 0-100)
+        pop_threshold = 46  # 0.46 * 100
+        status = "Populer" if y_pred_scaled >= pop_threshold else "Kurang Populer"
+        st.markdown("### Interpretasi")
         st.markdown(f"Lagu **{sample_orig['track_name']}** oleh **{sample_orig['track_artist']}** diprediksi sebagai: **{status}**")
         st.caption(f"_Kriteria: skor popularitas ≥ {pop_threshold} dianggap populer berdasarkan distribusi dataset._")
         st.caption("_Nilai popularitas telah dinormalisasi (0–1). Semakin kecil selisih, semakin akurat model._")
@@ -380,7 +500,7 @@ with tabs[4]:
     # MODE 2: Cari Lagu Manual
     # ---------------------------
     else:
-        st.subheader("📝 Cari Lagu Berdasarkan Judul atau Artis")
+        st.subheader("Cari Lagu Berdasarkan Judul atau Artis")
         query = st.text_input("Masukkan nama lagu atau artis:")
 
         if query:
@@ -388,9 +508,9 @@ with tabs[4]:
                                   df_original['track_artist'].str.contains(query, case=False, na=False)]
 
             if len(matches) == 0:
-                st.warning("❌ Lagu atau artis tidak ditemukan. Coba ketik sebagian nama lain.")
+                st.warning("Lagu atau artis tidak ditemukan. Coba ketik sebagian nama lain.")
             else:
-                st.success(f"✅ Ditemukan {len(matches)} hasil. Pilih salah satu untuk diprediksi:")
+                st.success(f"Ditemukan {len(matches)} hasil. Pilih salah satu untuk diprediksi:")
                 selected = st.selectbox("Pilih lagu:", matches['track_name'] + " — " + matches['track_artist'])
 
                 if selected:
@@ -399,33 +519,36 @@ with tabs[4]:
                     sample_orig = df_original.iloc[row_idx]
 
                     st.markdown(f"""
-                    **🎵 Judul:** {sample_orig['track_name']}  
-                    **🎤 Artis:** {sample_orig['track_artist']}  
-                    **🎧 Genre:** {sample_orig['playlist_genre']} | **Subgenre:** {sample_orig['playlist_subgenre']}  
-                    **📅 Tanggal Rilis:** {sample_orig['track_album_release_date']}  
-                    **⏱️ Durasi:** {round(sample_orig['duration_ms']/60000, 2)} menit  
+                    **Judul:** {sample_orig['track_name']}  
+                    **Artis:** {sample_orig['track_artist']}  
+                    **Genre:** {sample_orig['playlist_genre']} | **Subgenre:** {sample_orig['playlist_subgenre']}  
+                    **Tanggal Rilis:** {sample_orig['track_album_release_date']}  
+                    **Durasi:** {round(sample_orig['duration_ms']/60000, 2)} menit  
                     """)
 
-                    st.markdown("#### 📊 Nilai Fitur (Top 5)")
+                    st.markdown("#### Nilai Fitur (Top 5)")
                     st.table(pd.DataFrame([sample[top_features].round(4)], index=["value"]).T)
 
                     X = sample[top_features].values.reshape(1, -1)
                     y_pred = model.predict(X)[0]
                     y_true = sample['track_popularity']
-                    diff = abs(y_pred - y_true)
+                    # Konversi prediksi dan actual ke skala 0-100
+                    y_pred_scaled = y_pred * 100
+                    y_true_scaled = y_true * 100
+                    diff = abs(y_pred_scaled - y_true_scaled)
 
-                    st.markdown("#### 📈 Hasil Prediksi")
-                    st.metric("Predicted Popularity", f"{y_pred:.4f}")
-                    st.metric("Actual Popularity", f"{y_true:.4f}")
-                    st.metric("Selisih", f"{diff:.4f}")
+                    st.markdown("#### Hasil Prediksi")
+                    st.metric("Predicted Popularity", f"{y_pred_scaled:.2f}/100")
+                    st.metric("Actual Popularity", f"{y_true_scaled:.2f}/100")
+                    st.metric("Selisih", f"{diff:.2f}")
 
                     # Interpretasi popularitas
-                    pop_threshold = 0.46
-                    status = "🟢 Populer" if y_pred >= pop_threshold else "🔵 Kurang Populer"
-                    st.markdown(f"### 🎯 Interpretasi")
+                    pop_threshold = 46  # 0.46 * 100
+                    status = "Populer" if y_pred_scaled >= pop_threshold else "Kurang Populer"
+                    st.markdown("### Interpretasi")
                     st.markdown(f"Lagu **{sample_orig['track_name']}** oleh **{sample_orig['track_artist']}** diprediksi sebagai: **{status}**")
-                    st.caption(f"_Kriteria: skor popularitas ≥ {pop_threshold} dianggap populer berdasarkan distribusi dataset._")
-                    st.caption("_Nilai popularitas telah dinormalisasi (0–1). Semakin kecil selisih, semakin akurat model._")
+                    st.caption(f"_Kriteria: skor popularitas ≥ {pop_threshold}/100 dianggap populer berdasarkan distribusi dataset._")
+                    st.caption("_Semakin kecil selisih, semakin akurat model._")
 
 
 
