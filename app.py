@@ -151,7 +151,8 @@ st.sidebar.markdown("""
 # Quick Stats
 st.sidebar.markdown("### Quick Stats")
 st.sidebar.markdown(f"""
-- **Genre Terpopuler**: {df_original['playlist_genre'].value_counts().index[0]}
+- **Genre Terpopuler berdasarkan lagu**: {df_original['playlist_genre'].value_counts().index[0]}
+- **Genre dengan rata rata popularitas tertinggi**: pop
 - **Rata-rata Popularitas**: {df['track_popularity'].mean():.2f}
 - **Total Genre**: {df_original['playlist_genre'].nunique()}
 """)
@@ -318,12 +319,12 @@ with tabs[2]:
     # Top 10 Genre (Jumlah Lagu)
     # ============================
     with colg1:
-        st.subheader("Top 10 Genre (Jumlah Lagu)")
+        st.subheader("Top 6 Genre (Jumlah Lagu)")
         top_genres = df_original['playlist_genre'].value_counts().head(10)
         top_genres_labeled = top_genres.index + " (" + top_genres.values.astype(str) + " lagu)"
         figg1, axg1 = plt.subplots(figsize=(8, 4))
         sns.barplot(x=top_genres.values, y=top_genres_labeled, palette="plasma", ax=axg1)
-        axg1.set_title("Top 10 Genre berdasarkan Jumlah Lagu")
+        axg1.set_title("Top 6 Genre berdasarkan Jumlah Lagu")
         axg1.set_xlabel("Jumlah Lagu")
         axg1.set_ylabel("Genre")
         st.pyplot(figg1, use_container_width=True)
@@ -349,7 +350,7 @@ with tabs[2]:
     genre_popularity = df_original.groupby("playlist_genre")["track_popularity"].mean().sort_values(ascending=False).head(7)
     figg3, axg3 = plt.subplots(figsize=(8, 4))
     sns.barplot(x=genre_popularity.values, y=genre_popularity.index, palette="plasma", ax=axg3)
-    axg3.set_title("Top 7 Genre berdasarkan Rata-rata Popularitas")
+    axg3.set_title("Top 6 Genre berdasarkan Rata-rata Popularitas")
     axg3.set_xlabel("Rata-rata Popularitas")
     axg3.set_ylabel("Genre")
     st.pyplot(figg3, use_container_width=True)
